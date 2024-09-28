@@ -31,6 +31,7 @@ param(
 )
 
 . ".\Get-AutoSDK-PlatformPath.ps1"
+. ".\Get-VisualStudio-Installs.ps1"
 
 $AutoSDKRoot = Get-Item -Path $Path -ErrorAction SilentlyContinue
 if (-not $AutoSDKRoot) {
@@ -50,23 +51,15 @@ if ($Clean) {
     Write-Output "Cleaning AutoSDK platform path: $AutoSDKPlatformPath"
     Remove-Item -Path $AutoSDKPlatformPath -Recurse -Force
 }
-$pf = [Environment]::GetFolderPath("ProgramFilesx86")
-Write-Output "Program Files: $pf"
-# TODO: if powershell 7 use Join-Path enhancements instead of [IO.Path]::Combine?
-# $vsWhere = Join-Path $pf "Microsoft Visual Studio" "Installer" "vswhere.exe"
-$vsWhere = [IO.Path]::Combine($pf, "Microsoft Visual Studio", "Installer", "vswhere.exe")
-Write-Output "vsWhere path: $vsWhere"
-if (-not (Test-Path $vsWhere)) {
-    Write-Error "vsWhere not found -- are you sure you are running on a machine with Visual Studio 2017 or better installed?"
-    Exit -1
-}
-$VSInstalls = (& "$vsWhere" -format json -all -requires Microsoft.Component.MSBuild | ConvertFrom-Json) #-all -products * -requires Microsoft.VisualStudio.Product.BuildTools -property installationPath | ConvertFrom-Json
+
+$VSInstalls = Get-VisualStudio-Installs
 Write-Information "Visual Studio installs: $($VSInstalls.Count)"
 if ($VSInstalls.Count -eq 0) {
     Write-Error "No Visual Studio installs found"
     Exit -1
 }
 Write-Verbose "Visual Studio install 1: $($VSInstalls[0])"
+
 $VSInstalls | ForEach-Object {
     $vsPath = $_.installationPath
     $vsVersion = $_.buildVersion
