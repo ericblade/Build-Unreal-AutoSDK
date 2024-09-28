@@ -179,14 +179,14 @@ if (-not $SkipWindowsSDK) {
 
 # NetFX SDK is one level above the SDK directory
 if (-not $SkipNetFXSDK) {
-    $parentPath = Get-Item -Path $windowsSDKDir | Select-Object -First 1 | Select-Object -ExpandProperty Parent | Select-Object -ExpandProperty FullName
+    $parentPath = Get-Item -Path $windowsSDKDir | Select-Object -ExpandProperty FullName
     $netFXSDKDir = [IO.Path]::Combine($parentPath, "NETFXSDK")
-    $netFXSDKDir = Get-Item -Path $netFXSDKDir | Select-Object -First 1 | Select-Object -ExpandProperty FullName
     Write-Output "NetFX SDK Dir: $netFXSDKDir"
 
     # Copy the NetFX SDK to $AutoSDKPlatformPath\NETFXSDK
     # NetFX SDK is installed with the Windows SDK Kit
-    $outDir = [IO.Path]::Combine($AutoSDKPlatformPath, "NETFXSDK")
+    #$outDir = [IO.Path]::Combine($AutoSDKPlatformPath, "NETFXSDK")
+    $outDir = $AutoSDKPlatformPath
     Write-Output "Output directory: $outDir"
     if (-not (Test-Path $outDir)) {
         Write-Output "Creating directory: $outDir"
@@ -204,12 +204,12 @@ if (-not $SkipNetFXSDK) {
 
 if (-not $SkipDIASDK) {
     $DIASDKDir = [IO.Path]::Combine($vsPath, "DIA SDK")
-    $DIASDKDir = Get-Item -Path $DIASDKDir | Select-Object -First 1 | Select-Object -ExpandProperty FullName
     Write-Output "DIA SDK Dir: $DIASDKDir"
 
     # Copy the DIA SDK to $AutoSDKPlatformPath\DIA SDK
     # DIA SDK is installed with the Visual Studio install.
-    $outDir = [IO.Path]::Combine($AutoSDKPlatformPath, "DIA SDK")
+    #$outDir = [IO.Path]::Combine($AutoSDKPlatformPath, "DIA SDK")
+    $outDir = $AutoSDKPlatformPath
     Write-Output "Output directory: $outDir"
     if (-not (Test-Path $outDir)) {
         Write-Output "Creating directory: $outDir"
