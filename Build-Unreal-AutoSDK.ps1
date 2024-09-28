@@ -32,6 +32,7 @@ param(
 
 . ".\Get-AutoSDK-PlatformPath.ps1"
 . ".\Get-VisualStudio-Installs.ps1"
+. ".\Get-WindowsSDK-Path.ps1"
 
 $AutoSDKRoot = Get-Item -Path $Path -ErrorAction SilentlyContinue
 if (-not $AutoSDKRoot) {
@@ -116,42 +117,12 @@ $VSInstalls | ForEach-Object {
     }
 }
 
-$windowsSDKDir = ""
-# This method which calls the official Microsoft script to find the Windows SDK works when called from an interactive shell,
-# but does not when called from inside a PowerShell script.  I do not know why.  I would prefer to call the official Microsoft tool,
-# so that if the method changes, the script will still work.  However, for now, I will use the method contained inside that official
-# command, but in PowerShell form.
-#$winSDKFinderPath = [IO.Path]::Combine($VSInstalls[0].installationPath, "Common7", "Tools", "vsdevcmd", "core", "vsdevcmd_start.bat")
-# Run $winSDKFinderPath and get the environment variable for WIndowsSdkDir
-#$windowsSDKDir = (& cmd /c .\GetSDKPath.cmd $winSDKFinderPath)
-
-# TODO: we *could* have the user invoke this script from inside a Visual Studio Developer Command Prompt, in which case we could just use the environment variable.
-# I'd rather find out what's wrong with trying to call the official Microsoft script from inside a PowerShell script, though.
-
-# Instead, search HKLM:\SOFTWARE\Wow6432Node, HKCU:\SOFTWARE\Wow6432Node, HKLM:\SOFTWARE, HKCU:\SOFTWARE for the Microsoft\Microsoft SDKs\Windows\v10.0 key
-# Epic does not suport Windows 8.1 and lower, so let's just grab for v10.  Windows 11 does not have a separate kit at this time.
-$keyPath = "\Microsoft\Microsoft SDKs\Windows\v10.0"
-$regPathsToSearch = @(
-    "HKLM:\SOFTWARE"
-    "HKCU:\SOFTWARE"
-    "HKLM:\SOFTWARE\Wow6432Node"
-    "HKCU:\SOFTWARE\Wow6432Node"
-)
-$regPathsToSearch | ForEach-Object {
-    $regPath = $_ + $keyPath
-    Write-Verbose "Searching $regPath"
-    if (Test-Path $regPath) {
-        Write-Verbose "Found $regPath"
-        $windowsSDKDir = (Get-ItemProperty -Path $regPath -Name "InstallationFolder").InstallationFolder
-    }
-}
-$windowsSDKDir = Get-Item -Path $windowsSDKDir | Select-Object -ExpandProperty Parent | Select-Object -ExpandProperty FullName
+$windowsSDKDir = Get-WindowsSDK-Path
 Write-Output "Windows SDK Dir: $windowsSDKDir"
 
 $win10SDKDirPath = [IO.Path]::Combine($windowsSDKDir, "10")
 if (-not $SkipWindowsSDK) {
     # Copy the Windows SDK to $AutoSDKPlatformPath\Windows Kits\10
-    # TODO: For reasons I completely don't understand, if I specify "Windows Kits", "10" as the destination, I get "Windows Kits\10\10" as the destination.
     $outDir = [IO.Path]::Combine($AutoSDKPlatformPath, "Windows Kits")
     if (-not (Test-Path $outDir)) {
         Write-Output "Creating directory: $outDir"
