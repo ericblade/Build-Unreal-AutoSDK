@@ -34,6 +34,7 @@ param(
 . ".\Get-VisualStudio-Installs.ps1"
 . ".\Get-WindowsSDK-Path.ps1"
 . ".\Copy-SDK.ps1"
+. ".\Get-VS-Version-By-Tool-Version.ps1"
 
 $AutoSDKRoot = Get-Item -Path $Path -ErrorAction SilentlyContinue
 if (-not $AutoSDKRoot) {
@@ -71,31 +72,12 @@ if (-not $SkipVCTools) {
         Write-Output "VC Tools path: $vcToolsPath"
         Get-ChildItem -Path $vcToolsPath | ForEach-Object {
             $vcToolsVersion = $_.Name
-            Write-Output "VC Tools version: $vcToolsVersion"
-            $outDir = ""
-            switch -regex ($vcToolsVersion) {
-                # https://gist.github.com/RDCH106/40fe61f447df58c1b9c83a1781374bcd
-                "14.1[0-9]" {
-                    $outDir = "VS2017"
-                    Write-Output "VS 2017"
-                }
-                "14.2[0-9]" {
-                    $outDir = "VS2019"
-                    Write-Output "VS 2019"
-                }
-                "14.3[0-9]" {
-                    $outDir = "VS2022"
-                    Write-Output "VS 2022"
-                }
-                "14.4[0-9]" {
-                    $outDir = "VS2022"
-                    Write-Output "VS 2022 17.10+" # https://devblogs.microsoft.com/cppblog/msvc-toolset-minor-version-number-14-40-in-vs-2022-v17-10/
-                }
-            }
+            $outDir = Get-VS-Version-By-Tool-Version -ToolVersion $vcToolsVersion
+            Write-Output "VC Tools version: $vcToolsVersion $outDir"
             if (-not [string]::IsNullOrEmpty($outDir)) {
-                $outDir = [IO.Path]::Combine($AutoSDKPlatformPath, $outDir)
                 $inToolsPath = [IO.Path]::Combine($vcToolsPath, $vcToolsVersion)
-                Copy-SDK -Source $inToolsPath -Destination $outDir
+                Write-Output "Copying VC Tools from $inToolsPath to $outDir"
+                Copy-SDK -Source $inToolsPath -Destination ([IO.Path]::Combine($AutoSDKPlatformPath, $outDir))
             }
             else {
                 Write-Output "Unknown VC Tools version: $vcToolsVersion update the Build-Unreal-AutoSDK.ps1 script"

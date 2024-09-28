@@ -19,6 +19,7 @@ function Copy-SDK {
     if (-not (Test-Path $Destination)) {
         New-Item -Path $Destination -ItemType Directory
     }
+
     $capturedErrors = @()
     Copy-Item -Path $Source -Destination $Destination -Recurse -ErrorAction SilentlyContinue -ErrorVariable capturedErrors
     $capturedErrors | ForEach-Object {
