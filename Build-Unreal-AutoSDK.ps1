@@ -33,6 +33,7 @@ param(
 . ".\Get-AutoSDK-PlatformPath.ps1"
 . ".\Get-VisualStudio-Installs.ps1"
 . ".\Get-WindowsSDK-Path.ps1"
+. ".\Copy-SDK.ps1"
 
 $AutoSDKRoot = Get-Item -Path $Path -ErrorAction SilentlyContinue
 if (-not $AutoSDKRoot) {
@@ -95,20 +96,8 @@ $VSInstalls | ForEach-Object {
             # I may be wrong about that, though.
             if (-not [string]::IsNullOrEmpty($outDir)) {
                 $outDir = [IO.Path]::Combine($AutoSDKPlatformPath, $outDir)
-                Write-Output "Output directory: $outDir"
-                if (-not (Test-Path $outDir)) {
-                    Write-Output "Creating directory: $outDir"
-                    New-Item -Path $outDir -ItemType Directory
-                }
                 $inToolsPath = [IO.Path]::Combine($vcToolsPath, $vcToolsVersion)
-                Write-Output "Copying files from: $inToolsPath"
-                $capturedErrors = @()
-                Copy-Item -Path $inToolsPath -Destination $outDir -Recurse -ErrorVariable capturedErrors -ErrorAction SilentlyContinue
-                $capturedErrors | ForEach-Object {
-                    if ($_ -notmatch "already exists") {
-                        Write-Error "Error: $_"
-                    }
-                }
+                Copy-SDK -Source $inToolsPath -Destination $outDir
             }
             else {
                 Write-Output "Unknown VC Tools version: $vcToolsVersion update the Build-Unreal-AutoSDK.ps1 script"
@@ -124,20 +113,7 @@ $win10SDKDirPath = [IO.Path]::Combine($windowsSDKDir, "10")
 if (-not $SkipWindowsSDK) {
     # Copy the Windows SDK to $AutoSDKPlatformPath\Windows Kits\10
     $outDir = [IO.Path]::Combine($AutoSDKPlatformPath, "Windows Kits")
-    if (-not (Test-Path $outDir)) {
-        Write-Output "Creating directory: $outDir"
-        New-Item -Path $outDir -ItemType Directory
-    }
-    Write-Output "Copying files from: $win10SDKDirPath"
-    Write-Output "Output directory: $outDir"
-
-    $capturedErrors = @()
-    Copy-Item -Path $win10SDKDirPath -Destination $outDir -Recurse -ErrorVariable capturedErrors -ErrorAction SilentlyContinue
-    $capturedErrors | ForEach-Object {
-        if ($_ -notmatch "already exists") {
-            Write-Error "Error: $_"
-        }
-    }
+    Copy-SDK -Source $win10SDKDirPath -Destination $outDir
 }
 
 # Handle NetFX SDK and DIA SDK - Theoretically, you could have a NetFX SDK for different Kit installs, and a different DIA SDK for each Visual Studio install
@@ -147,48 +123,17 @@ if (-not $SkipWindowsSDK) {
 if (-not $SkipNetFXSDK) {
     $parentPath = Get-Item -Path $windowsSDKDir | Select-Object -ExpandProperty FullName
     $netFXSDKDir = [IO.Path]::Combine($parentPath, "NETFXSDK")
-    Write-Output "NetFX SDK Dir: $netFXSDKDir"
-
-    # Copy the NetFX SDK to $AutoSDKPlatformPath\NETFXSDK
-    # NetFX SDK is installed with the Windows SDK Kit
-    #$outDir = [IO.Path]::Combine($AutoSDKPlatformPath, "NETFXSDK")
     $outDir = $AutoSDKPlatformPath
-    Write-Output "Output directory: $outDir"
-    if (-not (Test-Path $outDir)) {
-        Write-Output "Creating directory: $outDir"
-        New-Item -Path $outDir -ItemType Directory
-    }
-    Write-Output "Copying files from: $netFXSDKDir"
-    $capturedErrors = @()
-    Copy-Item -Path $netFXSDKDir -Destination $outDir -Recurse -ErrorVariable capturedErrors -ErrorAction SilentlyContinue
-    $capturedErrors | ForEach-Object {
-        if ($_ -notmatch "already exists") {
-            Write-Error "Error: $_"
-        }
-    }
+
+    Copy-SDK -Source $netFXSDKDir -Destination $outDir
 }
 
+# DIA SDK is installed with the Visual Studio install.
 if (-not $SkipDIASDK) {
     $DIASDKDir = [IO.Path]::Combine($vsPath, "DIA SDK")
-    Write-Output "DIA SDK Dir: $DIASDKDir"
-
-    # Copy the DIA SDK to $AutoSDKPlatformPath\DIA SDK
-    # DIA SDK is installed with the Visual Studio install.
-    #$outDir = [IO.Path]::Combine($AutoSDKPlatformPath, "DIA SDK")
     $outDir = $AutoSDKPlatformPath
-    Write-Output "Output directory: $outDir"
-    if (-not (Test-Path $outDir)) {
-        Write-Output "Creating directory: $outDir"
-        New-Item -Path $outDir -ItemType Directory
-    }
-    Write-Output "Copying files from: $DIASDKDir"
-    $capturedErrors = @()
-    Copy-Item -Path $DIASDKDir -Destination $outDir -Recurse -ErrorVariable capturedErrors -ErrorAction SilentlyContinue
-    $capturedErrors | ForEach-Object {
-        if ($_ -notmatch "already exists") {
-            Write-Error "Error: $_"
-        }
-    }
+
+    Copy-SDK -Source $DIASDKDir -Destination $outDir
 }
 
 # TODO: print some final output summarizing what we did
