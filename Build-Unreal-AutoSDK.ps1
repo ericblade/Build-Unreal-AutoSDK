@@ -7,7 +7,7 @@ param(
     [Parameter()]
     [ValidateNotNullOrEmpty()]
     [string]
-    $Path = "h:\Unreal\AutoSDK",
+    $Path,
 
     [Parameter()]
     [switch]
