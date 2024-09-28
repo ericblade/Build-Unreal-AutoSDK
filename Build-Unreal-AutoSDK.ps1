@@ -1,7 +1,7 @@
 # Copy the Unreal Windows SDK and tools to the specified AutoSDK directory, HostWin64\Win64 into subdirectories for each Visual Studio version.
 # Initial version only does Win64 host and Win64 target.  Support for additional hosts and targets will be necessary.
-# TODO: we should probably use RoboCopy instead of Copy-Item for better performance...
 # TODO: support -WhatIf switch
+# TODO: add Host and Target platform selection, support Android targets, Linux targets and hosts, etc.
 
 param(
     [Parameter()]
@@ -55,45 +55,43 @@ if ($Clean) {
 }
 
 $VSInstalls = Get-VisualStudio-Installs
-Write-Information "Visual Studio installs: $($VSInstalls.Count)"
+Write-Output "Visual Studio installs: $($VSInstalls.Count)"
 if ($VSInstalls.Count -eq 0) {
     Write-Error "No Visual Studio installs found"
     Exit -1
 }
 Write-Verbose "Visual Studio install 1: $($VSInstalls[0])"
 
-$VSInstalls | ForEach-Object {
-    $vsPath = $_.installationPath
-    $vsVersion = $_.buildVersion
-    Write-Output "Visual Studio $vsVersion path: $vsPath"
-    $vcToolsPath = [IO.Path]::Combine($vsPath, "VC", "Tools", "MSVC")
-    Write-Output "VC Tools path: $vcToolsPath"
-    Get-ChildItem -Path $vcToolsPath | ForEach-Object {
-        $vcToolsVersion = $_.Name
-        Write-Output "VC Tools version: $vcToolsVersion"
-        $outDir = ""
-        switch -regex ($vcToolsVersion) {
-            # https://gist.github.com/RDCH106/40fe61f447df58c1b9c83a1781374bcd
-            "14.1[0-9]" {
-                $outDir = "VS2017"
-                Write-Output "VS 2017"
+if (-not $SkipVCTools) {
+    $VSInstalls | ForEach-Object {
+        $vsPath = $_.installationPath
+        $vsVersion = $_.buildVersion
+        Write-Output "Visual Studio $vsVersion path: $vsPath"
+        $vcToolsPath = [IO.Path]::Combine($vsPath, "VC", "Tools", "MSVC")
+        Write-Output "VC Tools path: $vcToolsPath"
+        Get-ChildItem -Path $vcToolsPath | ForEach-Object {
+            $vcToolsVersion = $_.Name
+            Write-Output "VC Tools version: $vcToolsVersion"
+            $outDir = ""
+            switch -regex ($vcToolsVersion) {
+                # https://gist.github.com/RDCH106/40fe61f447df58c1b9c83a1781374bcd
+                "14.1[0-9]" {
+                    $outDir = "VS2017"
+                    Write-Output "VS 2017"
+                }
+                "14.2[0-9]" {
+                    $outDir = "VS2019"
+                    Write-Output "VS 2019"
+                }
+                "14.3[0-9]" {
+                    $outDir = "VS2022"
+                    Write-Output "VS 2022"
+                }
+                "14.4[0-9]" {
+                    $outDir = "VS2022"
+                    Write-Output "VS 2022 17.10+" # https://devblogs.microsoft.com/cppblog/msvc-toolset-minor-version-number-14-40-in-vs-2022-v17-10/
+                }
             }
-            "14.2[0-9]" {
-                $outDir = "VS2019"
-                Write-Output "VS 2019"
-            }
-            "14.3[0-9]" {
-                $outDir = "VS2022"
-                Write-Output "VS 2022"
-            }
-            "14.4[0-9]" {
-                $outDir = "VS2022"
-                Write-Output "VS 2022 17.10+" # https://devblogs.microsoft.com/cppblog/msvc-toolset-minor-version-number-14-40-in-vs-2022-v17-10/
-            }
-        }
-        if (-not $SkipVCTools) {
-            # TODO: need to reflow this some to be able to put the SKipVCTools switch earlier since some other code below is probably dependent on a variable set above here.
-            # I may be wrong about that, though.
             if (-not [string]::IsNullOrEmpty($outDir)) {
                 $outDir = [IO.Path]::Combine($AutoSDKPlatformPath, $outDir)
                 $inToolsPath = [IO.Path]::Combine($vcToolsPath, $vcToolsVersion)
@@ -109,9 +107,9 @@ $VSInstalls | ForEach-Object {
 $windowsSDKDir = Get-WindowsSDK-Path
 Write-Output "Windows SDK Dir: $windowsSDKDir"
 
-$win10SDKDirPath = [IO.Path]::Combine($windowsSDKDir, "10")
 if (-not $SkipWindowsSDK) {
-    # Copy the Windows SDK to $AutoSDKPlatformPath\Windows Kits\10
+    # Copy the Windows SDK to $AutoSDKPlatformPath\Windows Kits
+    $win10SDKDirPath = [IO.Path]::Combine($windowsSDKDir, "10")
     $outDir = [IO.Path]::Combine($AutoSDKPlatformPath, "Windows Kits")
     Copy-SDK -Source $win10SDKDirPath -Destination $outDir
 }
@@ -130,7 +128,7 @@ if (-not $SkipNetFXSDK) {
 
 # DIA SDK is installed with the Visual Studio install.
 if (-not $SkipDIASDK) {
-    $DIASDKDir = [IO.Path]::Combine($vsPath, "DIA SDK")
+    $DIASDKDir = [IO.Path]::Combine($VSInstalls[0].installationPath, "DIA SDK")
     $outDir = $AutoSDKPlatformPath
 
     Copy-SDK -Source $DIASDKDir -Destination $outDir
