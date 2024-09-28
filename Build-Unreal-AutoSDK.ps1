@@ -30,6 +30,8 @@ param(
     $SkipDIASDK
 )
 
+. ".\Get-AutoSDK-PlatformPath.ps1"
+
 $AutoSDKRoot = Get-Item -Path $Path -ErrorAction SilentlyContinue
 if (-not $AutoSDKRoot) {
     Write-Output "AutoSDK path not found: $Path"
@@ -41,7 +43,7 @@ if (-not $AutoSDKRoot) {
 # As each one is found, copy it to the AutoSDKPlatformPath directory.
 
 Write-Output "AutoSDK path: $AutoSDKRoot"
-$AutoSDKPlatformPath = [IO.Path]::Combine($AutoSDKRoot, "HostWin64", "Win64")
+$AutoSDKPlatformPath = Get-AutoSDK-PlatformPath -Root $AutoSDKRoot -HostPlatform Win64 -TargetPlatform Win64
 Write-Output "AutoSDK platform path: $AutoSDKPlatformPath"
 
 if ($Clean) {
