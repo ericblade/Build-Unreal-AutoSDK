@@ -116,10 +116,10 @@ if (-not $SkipNetFXSDK) {
     $shouldUseVersion = $versions | Where-Object { $preferredVersion -contains $_ } | Select-Object -First 1
     if ($shouldUseVersion) {
         $netFXSDKDir = [IO.Path]::Combine($netFXSDKDir, $shouldUseVersion)
-        $outDir = [IO.Path]::Combine($AutoSDKPlatformPath, "NETFXSDK")
+        $outDir = [IO.Path]::Combine($AutoSDKPlatformPath, "Windows Kits", "NETFXSDK") # why don't i need to put the version on here?
     }
     else {
-        $outDir = $AutoSDKPlatformPath
+        $outDir = [IO.Path]::Combine($AutoSDKPlatformPath, "Windows Kits", "NETFXSDK")
         Write-Warning "Unreal may not support using AutoSDK with NETFXSDK versions other than 4.6 - 4.6.2. Versions found: $($versions.Join(', '))"
         Write-Warning "If your version is not supported, compiling Lightmass will fail with a message to install .Net 4.6 or better."
         Write-Warning "A bug has been filed with Epic to support other versions, as the regular compiler step does."
