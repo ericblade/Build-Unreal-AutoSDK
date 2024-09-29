@@ -4,30 +4,16 @@
 # TODO: add Host and Target platform selection, support Android targets, Linux targets and hosts, etc.
 
 param(
-    [Parameter()]
-    [ValidateNotNullOrEmpty()]
-    [string]
-    $Path,
-
-    [Parameter()]
-    [switch]
-    $Clean,
-
-    [Parameter()]
-    [switch]
-    $SkipVCTools,
-
-    [Parameter()]
-    [switch]
-    $SkipWindowsSDK,
-
-    [Parameter()]
-    [switch]
-    $SkipNetFXSDK,
-
-    [Parameter()]
-    [switch]
-    $SkipDIASDK
+    [Parameter()] [ValidateNotNullOrEmpty()] [string] $Path,
+    [Parameter()] [switch] $Clean,
+    [Parameter()] [switch] $SkipVCTools,
+    [Parameter()] [switch] $SkipWindowsSDK,
+    [Parameter()] [switch] $SkipNetFXSDK,
+    [Parameter()] [switch] $SkipDIASDK,
+    [Parameter()] [switch] $OnlyVCTools, # TODO: make it so only one of these Only params can be used at once, PowerShell should be able to enforce that, I think
+    [Parameter()] [switch] $OnlyWindowsSDK,
+    [Parameter()] [switch] $OnlyNetFXSDK,
+    [Parameter()] [switch] $OnlyDIASDK
 )
 
 . ".\Get-AutoSDK-PlatformPath.ps1"
@@ -35,6 +21,27 @@ param(
 . ".\Get-WindowsSDK-Path.ps1"
 . ".\Copy-SDK.ps1"
 . ".\Get-VS-Version-By-Tool-Version.ps1"
+
+if ($OnlyVCTools) {
+    $SkipWindowsSDK = $true
+    $SkipNetFXSDK = $true
+    $SkipDIASDK = $true
+}
+if ($OnlyWindowsSDK) {
+    $SkipVCTools = $true
+    $SkipNetFXSDK = $true
+    $SkipDIASDK = $true
+}
+if ($OnlyNetFXSDK) {
+    $SkipVCTools = $true
+    $SkipWindowsSDK = $true
+    $SkipDIASDK = $true
+}
+if ($OnlyDIASDK) {
+    $SkipVCTools = $true
+    $SkipWindowsSDK = $true
+    $SkipNetFXSDK = $true
+}
 
 $AutoSDKRoot = Get-Item -Path $Path -ErrorAction SilentlyContinue
 if (-not $AutoSDKRoot) {
