@@ -116,7 +116,7 @@ if (-not $SkipNetFXSDK) {
     $shouldUseVersion = $versions | Where-Object { $preferredVersion -contains $_ } | Select-Object -First 1
     if ($shouldUseVersion) {
         $netFXSDKDir = [IO.Path]::Combine($netFXSDKDir, $shouldUseVersion)
-        $outDir = [IO.Path]::Combine($AutoSDKPlatformPath, "NETFXSDK", $shouldUseVersion)
+        $outDir = [IO.Path]::Combine($AutoSDKPlatformPath, "NETFXSDK")
     }
     else {
         $outDir = $AutoSDKPlatformPath
