@@ -103,7 +103,23 @@ if (-not $SkipWindowsSDK) {
 if (-not $SkipNetFXSDK) {
     $parentPath = Get-Item -Path $windowsSDKDir | Select-Object -ExpandProperty FullName
     $netFXSDKDir = [IO.Path]::Combine($parentPath, "NETFXSDK")
-    $outDir = $AutoSDKPlatformPath
+    # check if preferredVersion is available
+    $versions = Get-ChildItem -Path $netFXSDKDir | Where-Object { $_.PSIsContainer } | Select-Object -ExpandProperty Name
+    $preferredVersion = @('4.6.2', '4.6.1', '4.6')
+    $shouldUseVersion = $versions | Where-Object { $preferredVersion -contains $_ } | Select-Object -First 1
+    if ($shouldUseVersion) {
+        $netFXSDKDir = [IO.Path]::Combine($netFXSDKDir, $shouldUseVersion)
+        $outDir = [IO.Path]::Combine($AutoSDKPlatformPath, $shouldUseVersion)
+    }
+    else {
+        $outDir = $AutoSDKPlatformPath
+        Write-Warning "Unreal may not support using AutoSDK with NETFXSDK versions other than 4.6 - 4.6.2. Versions found: $($versions.Join(', '))"
+        Write-Warning "If your version is not supported, compiling Lightmass will fail with a message to install .Net 4.6 or better."
+        Write-Warning "A bug has been filed with Epic to support other versions, as the regular compiler step does."
+        Write-Warning "You may install .Net 4.6.2 locally and re-run this script to get the correct SDK, or manually put it into your AutoSDK."
+        Write-Warning "We are going to copy the versions found, but Unreal may not use them until this bug is fixed."
+        Write-Warning "This bug was found in the 5.6 development tree."
+    }
 
     Copy-SDK -Source $netFXSDKDir -Destination $outDir
 }
