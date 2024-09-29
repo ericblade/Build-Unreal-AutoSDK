@@ -33,6 +33,44 @@ Do not copy over the NetFX SDK
 > -SkipDIASDK
 Do not copy over the DIA SDK
 
+> -OnlyVCTools
+Only copy Visual C++ Toolset
+
+> -OnlyWindowsSDK
+Only copy Windows SDK
+
+> -OnlyNetFXSDK
+Only copy NetFX SDK
+
+> -OnlyDIASDK
+Only copy DIA SDK
+
+## Using your new AutoSDK setup
+There are at least a few ways you can use AutoSDK:
+
+- If you are using your own custom build system, you can place the AutoSDK root somewhere on a network drive,
+and then on each Unreal builder that needs to use the AutoSDK, you can set the environment variable UE_SDKS_ROOT
+to the location containing the root AutoSDK file system.
+- You can also copy it locally to every build machine, if you'd like to spend the time to do that, which may be
+useful, versus network mounting it, depending on your situation.
+- You can also submit it to your perforce or other source control system, and have your build scripts ensure that
+each machine has a current copy of the AutoSDK.
+- If you use Unreal Horde, it uses the latter method -- you can configure an autoSdk property in the Unreal Horde
+server's globals.json file, under the "perforceClusters" section, something to the tune of
+```json
+			"autoSdk": [
+				{
+					"name": "AutoSDK-Main",
+					"properties": [
+						"OSFamily=Windows"
+					],
+					"stream": "//AutoSDK/main"
+				}
+			]
+```
+then add ```"useAutoSdk": true``` to each workspaceTypes entry in your project.json.  If you do this, each of your
+Horde agents will automatically pull a copy of that perforce stream, and use those SDKs to build with.
+
 ## Contributing
 
 Pull requests are welcome. For major changes, please open an issue first
