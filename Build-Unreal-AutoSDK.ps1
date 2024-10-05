@@ -133,7 +133,7 @@ if (-not $SkipNetFXSDK) {
     }
     else {
         $outDir = [IO.Path]::Combine($AutoSDKPlatformPath, "Windows Kits", "NETFXSDK")
-        Write-Warning "Unreal may not support using AutoSDK with NETFXSDK versions other than 4.6 - 4.6.2. Versions found: $($versions.Join(', '))"
+        Write-Warning "Unreal may not support using AutoSDK with NETFXSDK versions other than 4.6 - 4.6.2. Versions found: $($versions -join ', ')"
         Write-Warning "If your version is not supported, compiling Lightmass will fail with a message to install .Net 4.6 or better."
         Write-Warning "A bug has been filed with Epic to support other versions, as the regular compiler step does."
         Write-Warning "You may install .Net 4.6.2 locally and re-run this script to get the correct SDK, or manually put it into your AutoSDK."
