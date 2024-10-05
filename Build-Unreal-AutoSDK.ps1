@@ -4,16 +4,18 @@
 # TODO: add Host and Target platform selection, support Android targets, Linux targets and hosts, etc.
 
 param(
-    [Parameter()] [ValidateNotNullOrEmpty()] [string] $Path,
+    [Parameter(Mandatory)] [ValidateNotNullOrEmpty()] [string] $Path,
     [Parameter()] [switch] $Clean,
     [Parameter()] [switch] $SkipVCTools,
     [Parameter()] [switch] $SkipWindowsSDK,
     [Parameter()] [switch] $SkipNetFXSDK,
     [Parameter()] [switch] $SkipDIASDK,
+    [Parameter()] [switch] $SkipAndroid,
     [Parameter()] [switch] $OnlyVCTools, # TODO: make it so only one of these Only params can be used at once, PowerShell should be able to enforce that, I think
     [Parameter()] [switch] $OnlyWindowsSDK,
     [Parameter()] [switch] $OnlyNetFXSDK,
-    [Parameter()] [switch] $OnlyDIASDK
+    [Parameter()] [switch] $OnlyDIASDK,
+    [Parameter()] [switch] $OnlyAndroid
 )
 
 . ".\Get-AutoSDK-PlatformPath.ps1"
@@ -21,26 +23,37 @@ param(
 . ".\Get-WindowsSDK-Path.ps1"
 . ".\Copy-SDK.ps1"
 . ".\Get-VS-Version-By-Tool-Version.ps1"
+. ".\Get-Android-SDKs.ps1"
 
 if ($OnlyVCTools) {
     $SkipWindowsSDK = $true
     $SkipNetFXSDK = $true
     $SkipDIASDK = $true
+    $SkipAndroid = $true
 }
 if ($OnlyWindowsSDK) {
     $SkipVCTools = $true
     $SkipNetFXSDK = $true
     $SkipDIASDK = $true
+    $SkipAndroid = $true
 }
 if ($OnlyNetFXSDK) {
     $SkipVCTools = $true
     $SkipWindowsSDK = $true
     $SkipDIASDK = $true
+    $SkipAndroid = $true
 }
 if ($OnlyDIASDK) {
     $SkipVCTools = $true
     $SkipWindowsSDK = $true
     $SkipNetFXSDK = $true
+    $SkipAndroid = $true
+}
+if ($OnlyAndroid) {
+    $SkipVCTools = $true
+    $SkipWindowsSDK = $true
+    $SkipNetFXSDK = $true
+    $SkipDIASDK = $true
 }
 
 $AutoSDKRoot = Get-Item -Path $Path -ErrorAction SilentlyContinue
@@ -111,7 +124,7 @@ if (-not $SkipNetFXSDK) {
     $parentPath = Get-Item -Path $windowsSDKDir | Select-Object -ExpandProperty FullName
     $netFXSDKDir = [IO.Path]::Combine($parentPath, "NETFXSDK")
     # check if preferredVersion is available
-    $versions = Get-ChildItem -Path $netFXSDKDir | Where-Object { $_.PSIsContainer } | Select-Object -ExpandProperty Name
+    $versions = @(Get-ChildItem -Path $netFXSDKDir | Where-Object { $_.PSIsContainer } | Select-Object -ExpandProperty Name)
     $preferredVersion = @('4.6.2', '4.6.1', '4.6')
     $shouldUseVersion = $versions | Where-Object { $preferredVersion -contains $_ } | Select-Object -First 1
     if ($shouldUseVersion) {
@@ -137,6 +150,11 @@ if (-not $SkipDIASDK) {
     $outDir = $AutoSDKPlatformPath
 
     Copy-SDK -Source $DIASDKDir -Destination $outDir
+}
+
+if (-not $SkipAndroid) {
+    Write-Output "Warning: only enumerating Android SDKs, copying functionality to be implemented, as soon as I figure out how it is supposed to be laid out."
+    Get-Android-SDKs
 }
 
 # TODO: print some final output summarizing what we did
