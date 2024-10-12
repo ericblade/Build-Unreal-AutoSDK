@@ -15,7 +15,8 @@ param(
     [Parameter()] [switch] $OnlyWindowsSDK,
     [Parameter()] [switch] $OnlyNetFXSDK,
     [Parameter()] [switch] $OnlyDIASDK,
-    [Parameter()] [switch] $OnlyAndroid
+    [Parameter()] [switch] $OnlyAndroid,
+    [Parameter()] [string] $UnrealRoot # Provide an UnrealRoot to determine what SDK versions are supported by it's provided AutoSDK section
 )
 
 . ".\Get-AutoSDK-PlatformPath.ps1"
@@ -54,6 +55,46 @@ if ($OnlyAndroid) {
     $SkipWindowsSDK = $true
     $SkipNetFXSDK = $true
     $SkipDIASDK = $true
+}
+
+if ($UnrealRoot) {
+    $UnrealAutoSDKBasePath = [IO.Path]::Combine($UnrealRoot, "Engine", "Extras", "AutoSDK")
+    if (-not (Test-Path -Path $UnrealAutoSDKBasePath)) {
+        Write-Error "UnrealRoot provided, but AutoSDK path not found: $UnrealAutoSDKBasePath"
+        Exit -1
+    }
+    Write-Output "Using Unreal Root Path to determine AutoSDK path: $UnrealAutoSDKBasePath"
+    # Get list of directories in the UnrealAutoSDKBasePath, that is the list of hosts supported.
+    $Hosts = Get-ChildItem -Path $UnrealAutoSDKBasePath | Where-Object { $_.PSIsContainer } | Select-Object -ExpandProperty Name
+    Write-Output "Hosts: $($Hosts -join ', ')"
+    $SupportedSDKs = @()
+    # Enumerate the Hosts directories, to get the lists of targets supported.
+    $Hosts | ForEach-Object {
+        $HostPath = [IO.Path]::Combine($UnrealAutoSDKBasePath, $_)
+        $Targets = Get-ChildItem -Path $HostPath | Where-Object { $_.PSIsContainer } | Select-Object -ExpandProperty Name
+        # Enumerate the HostPath directories, to get the SDK Versions supported.
+        $BuildHost = $_
+        $Targets | ForEach-Object {
+            $TargetPath = [IO.Path]::Combine($HostPath, $_)
+            $SDKVersions = Get-ChildItem -Path $TargetPath | Where-Object { $_.PSIsContainer } | Select-Object -ExpandProperty Name
+            # if hostpath is HostWin64 and target is anything other than LLVM, then skip
+            if ($BuildHost -eq "HostWin64" -and $_ -eq "Win64") {
+                # ignore DIASDK, VS, Windows Kits, as Unreal autodetects their presence and there are no useful scripts included in their AutoSDK
+                $SDKVersions = $SDKVersions | Where-Object { @("DIA SDK", "VS2017", "VS2019", "VS2022", "Windows Kits") -notcontains $_ }
+            }
+
+            $SupportedSDKs += @{
+                Host = $BuildHost
+                Target = $_
+                Versions = $SDKVersions
+            }
+        }
+    }
+    # Write a list of supported SDKs in a tabular format
+    Write-Output "Supported SDKs for UnrealRoot: $UnrealRoot"
+    $SupportedSDKs | ForEach-Object {
+        Write-Output "Host: $($_.Host) Target: $($_.Target) SDK Versions: $($_.Versions -join ', ')"
+    }
 }
 
 $AutoSDKRoot = Get-Item -Path $Path -ErrorAction SilentlyContinue
